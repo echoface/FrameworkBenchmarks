@@ -1,12 +1,13 @@
 #!/bin/bash
 
-export ASQL_VER=0.43.0
+export ASQL_VER=0.46.0
 export CUTELEE_VER=6.0.0
 export CUTELYST_VER=3.1.0
 
 apt update -qq && \
     apt install -yqq --no-install-recommends \
     cmake \
+    git \
     pkg-config \
     qtbase5-dev \
     libqt5sql5-mysql \

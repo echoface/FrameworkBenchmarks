@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Concurrent;
 using System.Data.Odbc;
 using System.Threading.Tasks;
@@ -9,7 +8,13 @@ namespace appMpower.Db
    {
       private static bool _connectionsCreated = false;
       private static short _createdConnections = 0;
-      private static short _maxConnections = 333;
+
+#if MYSQL
+      private static short _maxConnections = 500; 
+#else
+      private static short _maxConnections = 500;
+#endif
+
       private static ConcurrentStack<PooledConnection> _stack = new ConcurrentStack<PooledConnection>();
       private static ConcurrentQueue<TaskCompletionSource<PooledConnection>> _waitingQueue = new ConcurrentQueue<TaskCompletionSource<PooledConnection>>();
 
@@ -29,12 +34,21 @@ namespace appMpower.Db
             }
 
             return pooledConnection;
-
          }
          else
          {
             pooledConnection = new PooledConnection();
-            pooledConnection.OdbcConnection = new OdbcConnection(connectionString);
+
+            if (DataProvider.IsOdbcConnection)
+            {
+               pooledConnection.DbConnection = new OdbcConnection(connectionString);
+            }
+            else
+            {
+               //For future use with non odbc drivers which can be AOT compiled without reflection
+               //pooledConnection.DbConnection = new NpgsqlConnection(connectionString);
+            }
+
             _createdConnections++;
 
             if (_createdConnections == _maxConnections) _connectionsCreated = true;
@@ -59,7 +73,7 @@ namespace appMpower.Db
       {
          PooledConnection newPooledConnection = new PooledConnection();
 
-         newPooledConnection.OdbcConnection = pooledConnection.OdbcConnection;
+         newPooledConnection.DbConnection = pooledConnection.DbConnection;
          newPooledConnection.Number = pooledConnection.Number;
          newPooledConnection.PooledCommands = pooledConnection.PooledCommands;
 
